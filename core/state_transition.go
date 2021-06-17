@@ -23,6 +23,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params/vars"
+/* Needed for logging:
+  "os"
+  "log"
+	"strconv"
+  "encoding/csv"
+	"errors"
+*/
 )
 
 /*
@@ -254,10 +261,12 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	)
 	if contractCreation {
 		ret, _, st.gas, vmerr = st.evm.Create(sender, st.data, st.gas, st.value)
+		//writeSmartContract(msg.From(), st.data, st.gas, st.value)
 	} else {
 		// Increment the nonce for the next transaction
 		st.state.SetNonce(msg.From(), st.state.GetNonce(sender.Address())+1)
 		ret, st.gas, vmerr = st.evm.Call(sender, st.to(), st.data, st.gas, st.value)
+		//write_Transaction(msg.From(), st.to(), st.data, st.gas, st.value)
 	}
 	st.refundGas()
 	st.state.AddBalance(st.evm.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), st.gasPrice))
@@ -290,3 +299,54 @@ func (st *StateTransition) refundGas() {
 func (st *StateTransition) gasUsed() uint64 {
 	return st.initialGas - st.gas
 }
+/* Optional logging: 
+// Write SmartContract creation to file
+func writeSmartContract(from common.Address, data []byte, gas uint64, value *big.Int) {
+	senderString := from.Hex()
+	dataString := string(data[:])
+	gasString := strconv.FormatUint(gas, 10)
+	valueString := value.String()
+	line := []string{senderString, dataString, gasString, valueString}
+	fileName := "D:/Glitznerf/Documents/uzh_bc/etc_parsed/smartcontracts.csv"
+	write_To_File(line, fileName)
+}
+
+// Write Peer to Peer Transaction to file
+func write_Transaction(from common.Address, to common.Address, data []byte, gas uint64, value *big.Int) {
+	senderString := from.Hex()
+	receiverString := to.Hex()
+	dataString := string(data[:])
+	gasString := strconv.FormatUint(gas, 10)
+	valueString := value.String()
+	line := []string{senderString, receiverString, dataString, gasString, valueString}
+	fileName := "D:/Glitznerf/Documents/uzh_bc/etc_parsed/transactions.csv"
+	write_To_File(line, fileName)
+}
+
+// String-Array to CSV Writer
+func write_To_File(line []string, fileName string) {
+
+	// Determine string validity
+	if !(len(line) == 4 || len(line) == 5) {
+		log.Fatal(errors.New("Wrong input length!"))
+	}
+
+	// Open or Create respective file
+	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+  defer file.Close()
+
+	if err != nil {
+    log.Fatal(err)
+  }
+
+	// Start writer and write to file
+	writer := csv.NewWriter(file)
+  defer writer.Flush()
+
+	writeErr := writer.Write(line)
+	if writeErr != nil {
+		log.Fatal(writeErr)
+	}
+
+}
+*/

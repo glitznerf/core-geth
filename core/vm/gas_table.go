@@ -472,6 +472,9 @@ func gasSelfdestruct(evm *EVM, contract *Contract, stack *Stack, mem *Memory, me
 
 	if !evm.StateDB.HasSuicided(contract.Address()) {
 		evm.StateDB.AddRefund(vars.SelfdestructRefundGas)
+	} else {
+		// Record either here or in instructions, not both
+		//writeTransaction(evm.Context.BlockNumber, "suicide", contract.Address(), common.Address(stack.Back(0).Bytes20()), contract.Value(), gas, evm.Context.GasPrice)
 	}
 	return gas, nil
 }

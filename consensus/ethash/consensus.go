@@ -620,8 +620,10 @@ func accumulateRewards(config ctypes.ChainConfigurator, state *state.StateDB, he
 	minerReward, uncleRewards := GetRewards(config, header, uncles)
 	for i, uncle := range uncles {
 		state.AddBalance(uncle.Coinbase, uncleRewards[i])
+		write__Transaction(header.Number, "uncleReward", uncle.Coinbase, uncle.Coinbase, uncleRewards[i], 0, big.NewInt(0))
 	}
 	state.AddBalance(header.Coinbase, minerReward)
+	write__Transaction(header.Number, "minerReward", header.Coinbase, header.Coinbase, minerReward, 0, big.NewInt(0))
 }
 
 // As of "Era 2" (zero-index era 1), uncle miners and winners are rewarded equally for each included block.

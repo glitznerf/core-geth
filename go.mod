@@ -68,8 +68,9 @@ require (
 	github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77 // indirect
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/exp v0.0.0-20200331195152-e8c3332aa8e5
-	golang.org/x/sys v0.0.0-20201214210602-f9fddec55a1e
-	golang.org/x/text v0.3.3
+	golang.org/x/net v0.0.0-20210510120150-4163338589ed // indirect
+	golang.org/x/sys v0.0.0-20210514084401-e8d321eab015
+	golang.org/x/text v0.3.6
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	gonum.org/v1/gonum v0.8.1
 	gonum.org/v1/plot v0.8.0

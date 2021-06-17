@@ -22,6 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/params/vars"
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
+	"math/big"
 )
 
 func opAdd(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
@@ -630,6 +631,11 @@ func opCreate(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]
 	if suberr == ErrExecutionReverted {
 		return res, nil
 	}
+
+	//blockNum := interpreter.evm.BlockNumber
+	//caller := callContext.contract.Address()
+	//balance := callContext.contract.value
+	//writeTransaction(blockNum, "create__", caller, addr, balance, gas-returnGas, interpreter.evm.Context.GasPrice)
 	return nil, nil
 }
 
@@ -663,6 +669,11 @@ func opCreate2(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 	if suberr == ErrExecutionReverted {
 		return res, nil
 	}
+
+	//blockNum := interpreter.evm.BlockNumber
+	//balance := callContext.contract.value
+	//writeTransaction(blockNum, "create2__", callContext.contract.Address(), addr, balance, gas-returnGas, interpreter.evm.Context.GasPrice)
+
 	return nil, nil
 }
 
@@ -701,6 +712,11 @@ func opCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 	}
 	callContext.contract.Gas += returnGas
 
+	if err == nil {
+	//	blockNum := interpreter.evm.BlockNumber
+	//	writeTransaction(blockNum, "call__", callContext.contract.Address(), toAddr, bigVal, gas-returnGas, interpreter.evm.Context.GasPrice)
+	}
+
 	return ret, nil
 }
 
@@ -736,10 +752,20 @@ func opCallCode(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 	}
 	callContext.contract.Gas += returnGas
 
+
+	if err == nil {
+	//	blockNum := interpreter.evm.BlockNumber
+	//	caller := callContext.contract.Address()
+	//	writeTransaction(blockNum, "callCode__", caller, toAddr, bigVal, gas-returnGas, interpreter.evm.Context.GasPrice)
+	}
+
+
 	return ret, nil
 }
 
 func opDelegateCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+//	valueBefore := callContext.contract.value
+
 	stack := callContext.stack
 	// Pop gas. The actual gas is in interpreter.evm.CallGasTemp.
 	// We use it as a temporary value
@@ -763,6 +789,15 @@ func opDelegateCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCt
 		callContext.memory.Set(retOffset.Uint64(), retSize.Uint64(), ret)
 	}
 	callContext.contract.Gas += returnGas
+//	valueAfter := callContext.contract.value
+
+
+	if err == nil {
+	//	blockNum := interpreter.evm.BlockNumber
+	//	caller := callContext.contract.Address()
+	//	value := big.NewInt(0).Sub(valueBefore, valueAfter)
+	//	writeTransaction(blockNum, "delegateCall__", caller, toAddr, value, gas - returnGas, interpreter.evm.Context.GasPrice)
+	}
 
 	return ret, nil
 }
@@ -792,6 +827,13 @@ func opStaticCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx)
 	}
 	callContext.contract.Gas += returnGas
 
+
+	if err == nil {
+	//	blockNum := interpreter.evm.BlockNumber
+		//caller := callContext.contract.Address()
+//		writeTransaction(blockNum, "staticCall__", caller, toAddr, big.NewInt(0), gas-returnGas, interpreter.evm.Context.GasPrice)
+	}
+
 	return ret, nil
 }
 
@@ -815,9 +857,19 @@ func opStop(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 
 func opSuicide(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
 	beneficiary := callContext.stack.pop()
-	balance := interpreter.evm.StateDB.GetBalance(callContext.contract.Address())
+	contractAddress := callContext.contract.Address()
+	balance := interpreter.evm.StateDB.GetBalance(contractAddress)
+	// Account for EIP-150 gas repricing
+	blockNum := interpreter.evm.Context.BlockNumber
+	gas := uint64(5000)
+	if blockNum.Cmp(big.NewInt(2463000))<0 {
+		gas = uint64(0)
+	}
+	writeTransaction(blockNum, "suicide", contractAddress, common.Address(beneficiary.Bytes20()), balance, gas, interpreter.evm.Context.GasPrice)
+
 	interpreter.evm.StateDB.AddBalance(common.Address(beneficiary.Bytes20()), balance)
-	interpreter.evm.StateDB.Suicide(callContext.contract.Address())
+	interpreter.evm.StateDB.Suicide(contractAddress)
+
 	return nil, nil
 }
 
