@@ -184,6 +184,7 @@ func (evm *EVM) Interpreter() Interpreter {
 // the necessary steps to create accounts and reverses the state in case of an
 // execution error or failed value transfer.
 func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
+	// Store the original max gas provided
 	gas2 := gas
 	if evm.vmConfig.NoRecursion && evm.depth > 0 {
 		return nil, gas, nil
@@ -250,11 +251,14 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 		//} else {
 		//	evm.StateDB.DiscardSnapshot(snapshot)
 	} else {
-		if gas2-gas == 0 {
-			gas2 = 2*gas2
-		}
+		blockNumber := evm.BlockNumber
+		time := evm.Context.Time
+		from := caller.Address()
+		// Subtract remaining gas from provided gas to get used gas
+		gasSpent := gas2 - gas
+		gasPrice := evm.Context.GasPrice
 		mutex.Lock()
-		writeTransaction(evm.BlockNumber, "call", caller.Address(), addr, value, gas2-gas, evm.Context.GasPrice)
+		writeTransaction(blockNumber, time, "call", from, addr, value, gasSpent, gasPrice)
 		mutex.Unlock()
 	}
 	return ret, gas, err
@@ -268,6 +272,7 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 // CallCode differs from Call in the sense that it executes the given address'
 // code with the caller as context.
 func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
+	// Store the original max gas provided
 	gas2 := gas
 	if evm.vmConfig.NoRecursion && evm.depth > 0 {
 		return nil, gas, nil
@@ -303,8 +308,14 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 			gas = 0
 		}
 	} else {
+		blockNumber := evm.BlockNumber
+		time := evm.Context.Time
+		from := caller.Address()
+		// Subtract remaining gas from provided gas to get used gas
+		gasSpent := gas2 - gas
+		gasPrice := evm.Context.GasPrice
 		mutex.Lock()
-		writeTransaction(evm.BlockNumber, "callcode", caller.Address(), addr, value, gas2-gas, evm.Context.GasPrice)
+		writeTransaction(blockNumber, time, "callCode", from, addr, value, gasSpent, gasPrice)
 		mutex.Unlock()
 	}
 	return ret, gas, err
@@ -316,6 +327,7 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 // DelegateCall differs from CallCode in the sense that it executes the given address'
 // code with the caller as context and the caller is set to the caller of the caller.
 func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
+	// Store the original max gas provided
 	gas2 := gas
 	if evm.vmConfig.NoRecursion && evm.depth > 0 {
 		return nil, gas, nil
@@ -343,8 +355,14 @@ func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []by
 			gas = 0
 		}
 	} else {
+		blockNumber := evm.BlockNumber
+		time := evm.Context.Time
+		from := caller.Address()
+		// Subtract remaining gas from provided gas to get used gas
+		gasSpent := gas2 - gas
+		gasPrice := evm.Context.GasPrice
 		mutex.Lock()
-		writeTransaction(evm.BlockNumber, "delegatecall", caller.Address(), addr, nil, gas2-gas, evm.Context.GasPrice)
+		writeTransaction(blockNumber, time, "delegateCall", from, addr, nil, gasSpent, gasPrice)
 		mutex.Unlock()
 	}
 	return ret, gas, err
@@ -355,6 +373,7 @@ func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []by
 // Opcodes that attempt to perform such modifications will result in exceptions
 // instead of performing the modifications.
 func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
+	// Store the original max gas provided
 	gas2 := gas
 	if evm.vmConfig.NoRecursion && evm.depth > 0 {
 		return nil, gas, nil
@@ -399,8 +418,14 @@ func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte
 			gas = 0
 		}
 	} else {
+		blockNumber := evm.BlockNumber
+		time := evm.Context.Time
+		from := caller.Address()
+		// Subtract remaining gas from provided gas to get used gas
+		gasSpent := gas2 - gas
+		gasPrice := evm.Context.GasPrice
 		mutex.Lock()
-		writeTransaction(evm.BlockNumber, "staticcall", caller.Address(), addr, nil, gas2-gas, evm.Context.GasPrice)
+		writeTransaction(blockNumber, time, "staticCall", from, addr, nil, gasSpent, gasPrice)
 		mutex.Unlock()
 	}
 
@@ -500,8 +525,14 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	}
 
 	if err == nil {
+		blockNumber := evm.BlockNumber
+		time := evm.Context.Time
+		from := caller.Address()
+		// Subtract remaining gas from provided gas to get used gas
+		gasSpent := gas - contract.Gas
+		gasPrice := evm.Context.GasPrice
 		mutex.Lock()
-		writeTransaction(evm.BlockNumber, "create", caller.Address(), address, value, gas-contract.Gas, evm.Context.GasPrice)
+		writeTransaction(blockNumber, time, "create", from, address, value, gasSpent, gasPrice)
 		mutex.Unlock()
 	}
 

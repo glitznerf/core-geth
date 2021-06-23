@@ -7,25 +7,46 @@ import (
   "encoding/csv"
 	"math/big"
 	"github.com/ethereum/go-ethereum/common"
+  "strings"
 )
+
+// Store past lines to filter for duplicates
+var container = make(map[uint64]string)
 
 // Filename is kept throughout application
 var fileName = "D:/Glitznerf/Documents/uzh_bc/etc_parsed/internal_tx.csv"
 
 // Write Transaction to file
-func write__Transaction(blockNo *big.Int, txType string, from common.Address, to common.Address, value *big.Int, gas uint64, gasPrice *big.Int) {
+func write__Transaction(blockNo *big.Int, time uint64, txType string, from common.Address, to common.Address, value *big.Int, gas uint64, gasPrice *big.Int) {
   blockNoString := blockNo.String()
+  blockNoUint := blockNo.Uint64()
+	timeString := strconv.FormatUint(time, 10)
   senderString := from.Hex()
 	receiverString := to.Hex()
 	valueString := value.String()
 	gasString := strconv.FormatUint(gas, 10)
 	gasPriceString := gasPrice.String()
 
-	line := []string{blockNoString, txType, senderString, receiverString, valueString, gasString, gasPriceString}
+	line := []string{blockNoString, timeString, txType, senderString, receiverString, valueString, gasString, gasPriceString}
+  lineString := strings.Join(line[2:],"")
 
   // Ignore burn address reward
   if senderString != "0x0000000000000000000000000000000000000000" {
-    writeToFile(line, fileName)
+    // If transactions from this block have been added, check cache for duplicates
+    if containerEntry, ok := container[blockNoUint]; ok {
+      if !(strings.Contains(containerEntry, lineString)) {
+    	   writeToFile(line, fileName)
+         container[blockNoUint] = containerEntry + lineString
+      }
+    } else {
+      writeToFile(line, fileName)
+      container[blockNoUint] = lineString
+    }
+  }
+
+  // Clear cache
+  if container[blockNoUint-uint64(3)] != "" {
+    container[blockNoUint-uint64(3)] = ""
   }
 }
 

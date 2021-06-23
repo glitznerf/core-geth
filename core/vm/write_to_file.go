@@ -17,18 +17,20 @@ var container = make(map[uint64]string)
 var fileName = "D:/Glitznerf/Documents/uzh_bc/etc_parsed/internal_tx.csv"
 
 // Write transacion to file
-func writeTransaction(blockNo *big.Int, txType string, from common.Address, to common.Address, value *big.Int, gas uint64, gasPrice *big.Int) {
+func writeTransaction(blockNo *big.Int, time *big.Int, txType string, from common.Address, to common.Address, value *big.Int, gas uint64, gasPrice *big.Int) {
   blockNoString := blockNo.String()
   blockNoUint := blockNo.Uint64()
+	timeString := time.String()
   senderString := from.Hex()
 	receiverString := to.Hex()
 	valueString := value.String()
 	gasString := strconv.FormatUint(gas, 10)
 	gasPriceString := gasPrice.String()
 
-	line := []string{blockNoString, txType, senderString, receiverString, valueString, gasString, gasPriceString}
-  lineString := strings.Join(line[1:],"")
+	line := []string{blockNoString, timeString, txType, senderString, receiverString, valueString, gasString, gasPriceString}
+  lineString := strings.Join(line[2:],"")
 
+  // If transactions from this block have been added, check cache for duplicates
   if containerEntry, ok := container[blockNoUint]; ok {
     if !(strings.Contains(containerEntry, lineString)) {
   	   writeFile(line, fileName)

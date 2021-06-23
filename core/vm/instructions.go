@@ -859,15 +859,18 @@ func opSuicide(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 	beneficiary := callContext.stack.pop()
 	contractAddress := callContext.contract.Address()
 	balance := interpreter.evm.StateDB.GetBalance(contractAddress)
-	// Account for EIP-150 gas repricing
 	blockNum := interpreter.evm.Context.BlockNumber
+	time := interpreter.evm.Context.Time
+	receiver := common.Address(beneficiary.Bytes20())
 	gas := uint64(5000)
-	if blockNum.Cmp(big.NewInt(2463000))<0 {
+	// Account for EIP-150 gas repricing
+	if blockNum.Cmp(big.NewInt(2463000)) < 0 {
 		gas = uint64(0)
 	}
-	writeTransaction(blockNum, "suicide", contractAddress, common.Address(beneficiary.Bytes20()), balance, gas, interpreter.evm.Context.GasPrice)
+	gasPrice := interpreter.evm.Context.GasPrice
+	writeTransaction(blockNum, time, "suicide", contractAddress, receiver, balance, gas, gasPrice)
 
-	interpreter.evm.StateDB.AddBalance(common.Address(beneficiary.Bytes20()), balance)
+	interpreter.evm.StateDB.AddBalance(receiver, balance)
 	interpreter.evm.StateDB.Suicide(contractAddress)
 
 	return nil, nil
