@@ -22,6 +22,8 @@ import (
 	"sync/atomic"
 	"time"
 	"sync"
+	"fmt"
+	"strconv"
 
 	"github.com/ethereum/evmc/v7/bindings/go/evmc"
 	"github.com/ethereum/go-ethereum/common"
@@ -256,9 +258,10 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 		from := caller.Address()
 		// Subtract remaining gas from provided gas to get used gas
 		gasSpent := gas2 - gas
+		fmt.Printf(strconv.FormatUint(gas2, 10), strconv.FormatUint(gas, 10), strconv.FormatUint(gasSpent, 10))
 		gasPrice := evm.Context.GasPrice
 		mutex.Lock()
-		writeTransaction(blockNumber, time, "call", from, addr, value, gasSpent, gasPrice)
+		writeTransaction(blockNumber, time, "call", from, addr, value, gas2, gasPrice)
 		mutex.Unlock()
 	}
 	return ret, gas, err
